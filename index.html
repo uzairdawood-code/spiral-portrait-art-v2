@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spiral Portrait Art</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.src = 'image_2d82c0.jpg';
+
+        img.onload = function() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const hRatio = canvas.width / img.width;
+            const vRatio = canvas.height / img.height;
+            const ratio = Math.min(hRatio, vRatio);
+            const centerShiftX = (canvas.width - img.width * ratio) / 2;
+            const centerShiftY = (canvas.height - img.height * ratio) / 2;
+
+            ctx.drawImage(img, 0, 0, img.width, img.height, 
+                               centerShiftX, centerShiftY, img.width * ratio, img.height * ratio);
+
+            let imgData;
+            try {
+                imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            } catch (e) {
+                alert("Error: " + e.message);
+                return;
+            }
+            
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let theta = 0;
+            const maxTheta = 70 * 2 * Math.PI;
+            const step = 0.3;
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const a = 1.8;
+
+            function animate() {
+                let batchEnd = Math.min(theta + 50, maxTheta);
+                while (theta < batchEnd) {
+                    let r = a * theta;
+                    let x = cx + r * Math.cos(theta);
+                    let y = cy + r * Math.sin(theta);
+
+                    let ix = Math.floor(x);
+                    let iy = Math.floor(y);
+
+                    if (ix >= 0 && ix < canvas.width && iy >= 0 && iy < canvas.height) {
+                        let index = (iy * canvas.width + ix) * 4;
+                        let r_val = imgData.data[index];
+                        let g_val = imgData.data[index + 1];
+                        let b_val = imgData.data[index + 2];
+                        let brightness = (r_val * 0.299 + g_val * 0.587 + b_val * 0.114);
+
+                        if (brightness < 240) {
+                            let size = Math.max(1, Math.floor((255 - brightness) / 35));
+                            ctx.fillStyle = `rgb(${r_val}, ${g_val}, ${b_val})`;
+                            ctx.fillRect(x - size/2, y - size/2, size, size);
+                        }
+                    }
+                    theta += step;
+                }
+
+                if (theta < maxTheta) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            animate();
+        };
+
+        img.onerror = function() {
+            alert("Could not find 'image_2d82c0.jpg'");
+        };
+    </script>
+</body>
+</html>
